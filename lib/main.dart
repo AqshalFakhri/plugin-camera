@@ -1,105 +1,106 @@
-import 'dart:math' as math;
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ViewportOffset;
+import 'package:flutter_plugin_pubdev/widget/filter_selector.dart';
+import 'package:flutter_plugin_pubdev/widget/takepicture_widget.dart';
 
-void main() {
-  runApp(
-    const MaterialApp(
-      home: PhotoFilterCarousel(),
-      debugShowCheckedModeBanner: false,
-    ),
-  );
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi kamera yang tersedia
+  final cameras = await availableCameras();
+  final firstCamera = cameras.first;
+
+  runApp(MyApp(firstCamera: firstCamera));
 }
 
-class PhotoFilterCarousel extends StatefulWidget {
-  const PhotoFilterCarousel({super.key});
+class MyApp extends StatelessWidget {
+  final CameraDescription firstCamera;
+
+  const MyApp({Key? key, required this.firstCamera}) : super(key: key);
 
   @override
-  State<PhotoFilterCarousel> createState() => _PhotoFilterCarouselState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData.dark(),
+      home: CameraWithFilterScreen(camera: firstCamera),
+      debugShowCheckedModeBanner: false,
+    );
+  }
 }
 
-class _PhotoFilterCarouselState extends State<PhotoFilterCarousel> {
-  final _filters = [
-    Colors.white,
-    ...List.generate(
-      Colors.primaries.length,
-          (index) => Colors.primaries[(index * 4) % Colors.primaries.length],
-    ),
-  ];
+class CameraWithFilterScreen extends StatefulWidget {
+  final CameraDescription camera;
 
-  final _filterColor = ValueNotifier<Color>(Colors.white);
+  const CameraWithFilterScreen({Key? key, required this.camera}) : super(key: key);
 
-  void _onFilterChanged(Color value) {
-    _filterColor.value = value;
+  @override
+  _CameraWithFilterScreenState createState() => _CameraWithFilterScreenState();
+}
+
+class _CameraWithFilterScreenState extends State<CameraWithFilterScreen> {
+  late CameraController _controller;
+  late Future<void> _initializeControllerFuture;
+  Color selectedFilter = Colors.transparent;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = CameraController(
+      widget.camera,
+      ResolutionPreset.medium,
+    );
+    _initializeControllerFuture = _controller.initialize();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black,
-      child: Stack(
+    return Scaffold(
+      body: Stack(
         children: [
-          Positioned.fill(
-            child: _buildPhotoWithFilter(),
+          FutureBuilder<void>(
+            future: _initializeControllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return CameraPreview(_controller);
+              } else {
+                return Center(child: CircularProgressIndicator());
+              }
+            },
           ),
+          // Overlay Filter
+          if (selectedFilter != Colors.transparent)
+            Container(
+              color: selectedFilter.withOpacity(0.3), // Set opacity for the filter effect
+            ),
+          // Filter Selector Widget at the Bottom
           Positioned(
-            left: 0.0,
-            right: 0.0,
-            bottom: 0.0,
-            child: _buildFilterSelector(),
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: FilterSelector(
+              filters: [
+                Colors.transparent,
+                Colors.red,
+                Colors.green,
+                Colors.blue,
+                Colors.yellow,
+              ],
+              onFilterChanged: (Color color) {
+                setState(() {
+                  selectedFilter = color;
+                });
+              },
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPhotoWithFilter() {
-    return ValueListenableBuilder(
-      valueListenable: _filterColor,
-      builder: (context, color, child) {
-        return Image.network(
-          'https://docs.flutter.dev/cookbook/img-files/effects/instagram-buttons/millennial-dude.jpg',
-          color: color.withOpacity(0.5),
-          colorBlendMode: BlendMode.color,
-          fit: BoxFit.cover,
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterSelector() {
-    return FilterSelector(
-      onFilterChanged: _onFilterChanged,
-      filters: _filters,
-    );
-  }
-}
-
-class FilterSelector extends StatelessWidget {
-  final ValueChanged<Color> onFilterChanged;
-  final List<Color> filters;
-
-  const FilterSelector({
-    Key? key,
-    required this.onFilterChanged,
-    required this.filters,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: filters.map((color) {
-        return GestureDetector(
-          onTap: () => onFilterChanged(color),
-          child: Container(
-            width: 40,
-            height: 40,
-            color: color,
-            margin: const EdgeInsets.symmetric(horizontal: 4.0),
-          ),
-        );
-      }).toList(),
     );
   }
 }
