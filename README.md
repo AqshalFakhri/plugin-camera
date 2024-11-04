@@ -1,16 +1,6 @@
-# flutter_plugin_pubdev
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+AqshalFakhri Eka Surya Saputra (362358302071)
+3. Jelaskan maksud void async pada praktikum 1?
+asinkron berguna menjalankan fungsi await untuk menjalankan kode yang memakan waktu cukup lama tanpa menghentikan eksekusi kode yang lain.
+4. Jelaskan fungsi dari anotasi @immutable dan @override ?
+@immutable digunakan sebagai penanda bahwa class tersebut tidak dapat diubah
+@override berguna untuk menunjukkan bahwa method tersebut berada di class turunan menggunakan method yang sama dengan class induknya. Menjelaskan implementasi ulang dari class induk.
